@@ -100,17 +100,27 @@ app.post("/gemini", async (req, res) => {
 // RemoveBG
 app.post("/removebg", async (req, res) => {
   try {
-    const { imageUrl } = req.body;
-    if (!imageUrl) return res.status(400).json({ error: "imageUrl is required" });
+    const { imageUrl, image } = req.body;
+    if (!imageUrl && !image) {
+      return res.status(400).json({ error: "Provide imageUrl or base64 image" });
+    }
+
+    const formData = new FormData();
+    if (imageUrl) {
+      formData.append("image_url", imageUrl);
+    } else {
+      formData.append("image_file", Buffer.from(image, "base64"), "image.png");
+    }
+    formData.append("size", "auto");
 
     const response = await axios.post(
       "https://api.remove.bg/v1.0/removebg",
+      formData,
       {
-        image_url: imageUrl,
-        size: "auto",
-      },
-      {
-        headers: { "X-Api-Key": REMOVEBG_KEY },
+        headers: {
+          "X-Api-Key": process.env.REMOVEBG_API_KEY,
+          ...formData.getHeaders(),
+        },
         responseType: "arraybuffer",
       }
     );
