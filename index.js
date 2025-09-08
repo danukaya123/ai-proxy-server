@@ -16,8 +16,10 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // === DeepSeek ===
-// You need your DeepSeek API key stored in Vercel
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY;
+
+// === RemoveBG ===
+const REMOVEBG_KEY = process.env.REMOVEBG_API_KEY;
 
 // === Routes ===
 
@@ -92,6 +94,32 @@ app.post("/gemini", async (req, res) => {
   } catch (err) {
     console.error("Gemini Error:", err.message);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// RemoveBG
+app.post("/removebg", async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl) return res.status(400).json({ error: "imageUrl is required" });
+
+    const response = await axios.post(
+      "https://api.remove.bg/v1.0/removebg",
+      {
+        image_url: imageUrl,
+        size: "auto",
+      },
+      {
+        headers: { "X-Api-Key": REMOVEBG_KEY },
+        responseType: "arraybuffer",
+      }
+    );
+
+    res.setHeader("Content-Type", "image/png");
+    res.send(response.data);
+  } catch (err) {
+    console.error("RemoveBG Error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to remove background" });
   }
 });
 
